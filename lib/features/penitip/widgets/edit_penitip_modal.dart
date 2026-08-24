@@ -22,6 +22,7 @@ class _EditPenitipModalState extends State<EditPenitipModal> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _commissionController;
+  late TextEditingController _commissionNominalController;
   late TextEditingController _addressController;
   late TextEditingController _notesController;
 
@@ -33,6 +34,10 @@ class _EditPenitipModalState extends State<EditPenitipModal> {
         TextEditingController(text: widget.penitip.phoneNumber ?? '');
     _commissionController = TextEditingController(
         text: widget.penitip.commissionRate.toString());
+    _commissionNominalController = TextEditingController(
+        text: widget.penitip.commissionNominal == 0
+            ? ''
+            : widget.penitip.commissionNominal.toString());
     _addressController =
         TextEditingController(text: widget.penitip.address ?? '');
     _notesController = TextEditingController(text: widget.penitip.notes ?? '');
@@ -43,6 +48,7 @@ class _EditPenitipModalState extends State<EditPenitipModal> {
     _nameController.dispose();
     _phoneController.dispose();
     _commissionController.dispose();
+    _commissionNominalController.dispose();
     _addressController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -57,6 +63,8 @@ class _EditPenitipModalState extends State<EditPenitipModal> {
             : _phoneController.text.trim(),
         commissionRate:
             int.tryParse(_commissionController.text.trim()) ?? 10,
+        commissionNominal:
+            int.tryParse(_commissionNominalController.text.trim()) ?? 0,
         address: _addressController.text.trim().isEmpty
             ? null
             : _addressController.text.trim(),
@@ -173,14 +181,14 @@ class _EditPenitipModalState extends State<EditPenitipModal> {
                     Expanded(
                       flex: 2,
                       child: TextFormField(
-                        controller: _commissionController,
+                        controller: _commissionNominalController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Fee Toko (%)',
-                          hintText: '10',
+                          labelText: 'Komisi/Item (Rp)',
+                          hintText: '1000',
                           filled: true,
                           fillColor: AppColors.background,
-                          prefixIcon: const Icon(Icons.percent_rounded, size: 18),
+                          prefixIcon: const Icon(Icons.monetization_on_rounded, size: 18),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide:

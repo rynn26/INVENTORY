@@ -271,8 +271,9 @@ class _PenitipListScreenState extends State<PenitipListScreen> {
   }
 
   void _shareWhatsAppRekap(PenitipItem penitip) {
-    final commission =
-        (penitip.totalRevenue * (penitip.commissionRate / 100)).round();
+    final commission = penitip.commissionNominal > 0
+        ? penitip.commissionNominal * penitip.totalItems
+        : (penitip.totalRevenue * (penitip.commissionRate / 100)).round();
     final netPayout = penitip.totalRevenue - commission;
 
     ScaffoldMessenger.of(context).showSnackBar(

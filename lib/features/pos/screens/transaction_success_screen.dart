@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../../core/services/bluetooth_printer_service.dart';
 import '../../../core/services/print_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../models/cart_item.dart';
+import '../../../shared/widgets/bluetooth_printer_modal.dart';
 
 class TransactionSuccessScreen extends StatelessWidget {
   final String transactionId;
@@ -27,6 +29,123 @@ class TransactionSuccessScreen extends StatelessWidget {
 
   String _formatCurrency(int amount) {
     return CurrencyFormatter.format(amount);
+  }
+
+  /// Eksekusi Cetak Struk Langsung ke Bluetooth Thermal Printer
+  Future<void> _directPrintReceipt(BuildContext context) async {
+    final isConnected = await BluetoothPrinterService.checkConnection();
+
+    if (!isConnected) {
+      if (!context.mounted) return;
+      // Belum terhubung -> Buka Modal Pilih & Sambungkan Bluetooth
+      final connected = await BluetoothPrinterModal.show(
+        context,
+        onConnected: () {
+          // Begitu terhubung, langsung otomatis cetak
+          _executeDirectPrint(context);
+        },
+      );
+      if (connected == true && context.mounted) {
+        await _executeDirectPrint(context);
+      }
+      return;
+    }
+
+    if (context.mounted) {
+      await _executeDirectPrint(context);
+    }
+  }
+
+  Future<void> _executeDirectPrint(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        duration: Duration(seconds: 2),
+        backgroundColor: AppColors.primary,
+        content: Row(
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text('Mengirim struk ke printer thermal...'),
+          ],
+        ),
+      ),
+    );
+
+    final success = await BluetoothPrinterService.printReceipt(
+      receiptNumber: transactionId,
+      dateTime: DateFormatter.formatFullDate(DateTime.now()),
+      paymentMethod: paymentMethod,
+      items: cartItems
+          .map((e) => {
+                'name': e.name,
+                'qty': e.quantity,
+                'price': e.price,
+              })
+          .toList(),
+      totalAmount: totalAmount,
+      cashReceived: cashReceived,
+      changeAmount: changeAmount,
+    );
+
+    if (!context.mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.success,
+          content: Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white),
+              SizedBox(width: 8),
+              Text(
+                'Struk berhasil dicetak ke printer thermal!',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.danger,
+          content: const Text(
+            'Gagal mencetak struk. Pastikan printer Bluetooth menyala dan tersambung.',
+          ),
+          action: SnackBarAction(
+            label: 'Sambungkan',
+            textColor: Colors.white,
+            onPressed: () => BluetoothPrinterModal.show(context),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Cetak via Print Spooler / PDF Sistem (Fallback)
+  Future<void> _systemPdfPrint() async {
+    await PrintService.printReceipt(
+      receiptNumber: transactionId,
+      dateTime: DateFormatter.formatFullDate(DateTime.now()),
+      paymentMethod: paymentMethod,
+      items: cartItems
+          .map((e) => {
+                'name': e.name,
+                'qty': e.quantity,
+                'price': e.price,
+              })
+          .toList(),
+      totalAmount: totalAmount,
+      cashReceived: cashReceived,
+      changeAmount: changeAmount,
+    );
   }
 
   void _showPrintReceiptModal(BuildContext context) {
@@ -91,7 +210,7 @@ class TransactionSuccessScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Jl. Jendral Sudirman No. 88',
+                    'Kasir & Konsinyasi Makanan Titipan',
                     style: TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
@@ -227,30 +346,35 @@ class TransactionSuccessScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Print Thermal Action
+            // Direct Bluetooth Print Action
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
                 style: AppStyles.primaryButtonStyle(),
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(ctx);
-                  await PrintService.printReceipt(
-                    receiptNumber: transactionId,
-                    dateTime: DateFormatter.formatFullDate(DateTime.now()),
-                    paymentMethod: paymentMethod,
-                    items: cartItems.map((e) => {
-                      'name': e.name,
-                      'qty': e.quantity,
-                      'price': e.price,
-                    }).toList(),
-                    totalAmount: totalAmount,
-                    cashReceived: cashReceived,
-                    changeAmount: changeAmount,
-                  );
+                  _directPrintReceipt(context);
                 },
                 icon: const Icon(Icons.print_rounded, size: 20),
-                label: const Text('Cetak Sekarang'),
+                label: const Text('Cetak Langsung (Bluetooth Thermal)'),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // System PDF Print Fallback
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                style: AppStyles.outlinedButtonStyle(),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _systemPdfPrint();
+                },
+                icon: const Icon(Icons.picture_as_pdf_rounded,
+                    size: 18, color: AppColors.primary),
+                label: const Text('Cetak via Dialog Sistem (PDF)'),
               ),
             ),
           ],
@@ -455,38 +579,129 @@ class TransactionSuccessScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-              // Cetak Struk Button
+              // Bluetooth Printer Status & Quick Connect Card
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      BluetoothPrinterService.isConnected
+                          ? Icons.bluetooth_connected_rounded
+                          : Icons.bluetooth_rounded,
+                      color: BluetoothPrinterService.isConnected
+                          ? AppColors.success
+                          : AppColors.textSecondary,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            BluetoothPrinterService.isConnected
+                                ? 'Printer: ${BluetoothPrinterService.selectedDevice?.name ?? "Terhubung"}'
+                                : 'Printer Bluetooth belum tersambung',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: BluetoothPrinterService.isConnected
+                                  ? AppColors.success
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            BluetoothPrinterService.isConnected
+                                ? 'Siap mencetak struk langsung (ESC/POS)'
+                                : 'Ketuk untuk pilih & hubungkan printer',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => BluetoothPrinterModal.show(context),
+                      child: Text(
+                        BluetoothPrinterService.isConnected
+                            ? 'Ganti'
+                            : 'Pilih Printer',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Cetak Struk Langsung (Bluetooth Thermal)
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
                   style: AppStyles.primaryButtonStyle(),
-                  onPressed: () => _showPrintReceiptModal(context),
+                  onPressed: () => _directPrintReceipt(context),
                   icon: const Icon(
                     Icons.print_rounded,
                     color: Colors.white,
                     size: 20,
                   ),
-                  label: const Text('Cetak Struk'),
+                  label: const Text('Cetak Struk Thermal (Bluetooth)'),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+
+              // Pratinjau & Pilihan Print
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  style: AppStyles.outlinedButtonStyle(),
+                  onPressed: () => _showPrintReceiptModal(context),
+                  icon: const Icon(
+                    Icons.receipt_long_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                  label: const Text('Pratinjau / Opsi Lain'),
+                ),
+              ),
+              const SizedBox(height: 10),
 
               // Transaksi Baru Button
               SizedBox(
                 width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  style: AppStyles.outlinedButtonStyle(),
+                height: 44,
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                  ),
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(
-                    Icons.add_rounded,
-                    color: AppColors.primary,
-                    size: 20,
+                    Icons.arrow_forward_rounded,
+                    size: 18,
                   ),
-                  label: const Text('Transaksi Baru'),
+                  label: const Text('Kembali ke Kasir (Transaksi Baru)'),
                 ),
               ),
             ],

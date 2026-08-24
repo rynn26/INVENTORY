@@ -196,31 +196,47 @@ class PrintService {
     pdf.addPage(
       pw.Page(
         pageFormat: format,
-        margin: pw.EdgeInsets.symmetric(
+        margin: const pw.EdgeInsets.symmetric(
           horizontal: 3 * PdfPageFormat.mm,
           vertical: 4 * PdfPageFormat.mm,
         ),
         build: (ctx) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
             // Header
-            pw.Text('TITIPKASIR',
+            pw.Center(
+              child: pw.Text(
+                'TITIPKASIR',
                 style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                    letterSpacing: 1.5)),
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
             pw.SizedBox(height: 2),
-            pw.Text('Kasir & Konsinyasi Makanan Titipan',
-                style: smallStyle, textAlign: pw.TextAlign.center),
-            pw.SizedBox(height: 6),
+            pw.Center(
+              child: pw.Text(
+                'Kasir & Konsinyasi Makanan Titipan',
+                style: smallStyle,
+                textAlign: pw.TextAlign.center,
+              ),
+            ),
+            pw.SizedBox(height: 5),
             divider,
+            pw.SizedBox(height: 3),
 
             // Info transaksi
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('No. Struk', style: normalStyle),
-                pw.Text(receiptNumber, style: boldStyle),
+                pw.Text(
+                  receiptNumber.length > 18
+                      ? receiptNumber.substring(receiptNumber.length - 14)
+                      : receiptNumber,
+                  style: boldStyle,
+                ),
               ],
             ),
             pw.SizedBox(height: 2),
@@ -235,54 +251,64 @@ class PrintService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Pembayaran', style: normalStyle),
+                pw.Text('Metode', style: normalStyle),
                 pw.Text(paymentMethod.toUpperCase(), style: boldStyle),
               ],
             ),
+            pw.SizedBox(height: 3),
             divider,
+            pw.SizedBox(height: 3),
 
             // Items
             ...items.map((item) {
-              final name = item['name'] as String? ?? '';
+              final name = (item['name'] as String? ?? '').trim();
               final qty = item['qty'] as int? ?? 1;
               final price = item['price'] as int? ?? 0;
               final subtotal = qty * price;
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(name, style: boldStyle),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('  ${qty}x ${_formatCurrency(price)}',
-                          style: normalStyle),
-                      pw.Text(_formatCurrency(subtotal), style: normalStyle),
-                    ],
-                  ),
-                  pw.SizedBox(height: 3),
-                ],
+              return pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(name, style: boldStyle),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('  $qty x ${_formatCurrency(price)}',
+                            style: normalStyle),
+                        pw.Text(_formatCurrency(subtotal), style: normalStyle),
+                      ],
+                    ),
+                  ],
+                ),
               );
             }),
+            pw.SizedBox(height: 3),
             divider,
+            pw.SizedBox(height: 3),
 
             // Total
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('TOTAL', style: boldStyle),
+                pw.Text('TOTAL',
+                    style: pw.TextStyle(
+                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
                 pw.Text(_formatCurrency(totalAmount),
-                    style:
-                        pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    style: pw.TextStyle(
+                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
               ],
             ),
             pw.SizedBox(height: 2),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Bayar', style: normalStyle),
+                pw.Text('Bayar (${paymentMethod.toUpperCase()})',
+                    style: normalStyle),
                 pw.Text(_formatCurrency(cashReceived), style: normalStyle),
               ],
             ),
+            pw.SizedBox(height: 2),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -290,16 +316,25 @@ class PrintService {
                 pw.Text(_formatCurrency(changeAmount), style: boldStyle),
               ],
             ),
+            pw.SizedBox(height: 3),
             divider,
+            pw.SizedBox(height: 4),
 
             // Footer
-            pw.SizedBox(height: 4),
-            pw.Text('Terima kasih atas kunjungan Anda!',
-                style: smallStyle, textAlign: pw.TextAlign.center),
-            pw.Text(
-                'Barang yang sudah dibeli\ntidak dapat ditukar/dikembalikan.',
+            pw.Center(
+              child: pw.Text(
+                'Terima kasih atas kunjungan Anda!',
                 style: smallStyle,
-                textAlign: pw.TextAlign.center),
+                textAlign: pw.TextAlign.center,
+              ),
+            ),
+            pw.Center(
+              child: pw.Text(
+                'Barang yang sudah dibeli tidak dapat ditukar.',
+                style: smallStyle,
+                textAlign: pw.TextAlign.center,
+              ),
+            ),
           ],
         ),
       ),

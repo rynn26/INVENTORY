@@ -51,105 +51,123 @@ class BarcodeLabelSticker extends StatelessWidget {
               ]
             : null,
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Header: Brand & Penitip
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'TITIPKASIR',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
-                  color: AppColors.primaryDark,
+      child: ClipRect(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: width - 20, // account for horizontal padding
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header: Brand & Penitip
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'TITIPKASIR',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        penitipName.isEmpty ? 'Dagangan Sendiri' : penitipName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Flexible(
-                child: Text(
-                  penitipName,
+                const SizedBox(height: 4),
+
+                // Product Name
+                Text(
+                  productName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF475569),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.2,
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 4),
 
-          // Product Name
-          Text(
-            productName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
-              letterSpacing: -0.2,
-            ),
-          ),
-
-          // Barcode Lines Graphic (Custom Vector Painter)
-          SizedBox(
-            height: 38,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: BarcodeGraphicPainter(code: barcodeCode),
-            ),
-          ),
-
-          // Barcode String & Expiry Date
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                barcodeCode,
-                style: const TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'monospace',
-                  letterSpacing: 1.2,
-                  color: Color(0xFF1E293B),
+                // Barcode Lines Graphic (Custom Vector Painter)
+                SizedBox(
+                  height: 38,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: BarcodeGraphicPainter(code: barcodeCode),
+                  ),
                 ),
-              ),
-              Text(
-                'Exp: $expiryDate',
-                style: const TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 4),
 
-          // Price Tag Pill
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 2.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _formatCurrency(price),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: AppColors.primaryDark,
-                letterSpacing: -0.3,
-              ),
+                // Barcode String & Expiry Date
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        barcodeCode,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'monospace',
+                          letterSpacing: 1.2,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Exp: $expiryDate',
+                      style: const TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // Price Tag Pill
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _formatCurrency(price),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primaryDark,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

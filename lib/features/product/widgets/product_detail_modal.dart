@@ -25,8 +25,10 @@ class ProductDetailModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final commission = (product.price * 0.1).round(); // 10% toko
-    final vendorShare = product.price - commission;
+    final isOwnProduct = product.penitipName.isEmpty;
+    final barcodeDisplay = product.barcode != null && product.barcode!.isNotEmpty
+        ? product.barcode!
+        : 'TK-${product.id.replaceAll("-", "").substring(0, 8).toUpperCase()}';
 
     return Container(
       decoration: const BoxDecoration(
@@ -135,11 +137,13 @@ class ProductDetailModal extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Penitip: ${product.penitipName}',
-                          style: const TextStyle(
+                          isOwnProduct ? 'Dagangan Sendiri' : product.penitipName,
+                          style: TextStyle(
                             fontSize: 12.5,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                            color: isOwnProduct
+                                ? const Color(0xFF16A34A)
+                                : AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -224,7 +228,7 @@ class ProductDetailModal extends StatelessWidget {
             ),
             const SizedBox(height: 14),
 
-            // Bagi Hasil Breakdown Box
+            // Info Box: Pemilik & Kode Barcode
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -238,16 +242,32 @@ class ProductDetailModal extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Komisi Toko (10%)',
+                        'Pemilik Produk',
                         style: TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
                       ),
-                      Text(
-                        _formatCurrency(commission),
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            isOwnProduct
+                                ? Icons.store_rounded
+                                : Icons.person_outline_rounded,
+                            size: 14,
+                            color: isOwnProduct
+                                ? const Color(0xFF16A34A)
+                                : AppColors.primary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            isOwnProduct ? 'Dagangan Sendiri' : product.penitipName,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: isOwnProduct
+                                  ? const Color(0xFF16A34A)
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -256,15 +276,20 @@ class ProductDetailModal extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Bagi Hasil Penitip',
+                        'Komisi',
                         style: TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
                       ),
                       Text(
-                        _formatCurrency(vendorShare),
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F766E),
+                        isOwnProduct
+                            ? 'Tidak ada (milik sendiri)'
+                            : 'Lihat di Edit Penitip',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: isOwnProduct ? FontStyle.normal : FontStyle.italic,
+                          color: isOwnProduct
+                              ? const Color(0xFF16A34A)
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -278,7 +303,7 @@ class ProductDetailModal extends StatelessWidget {
                         style: TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
                       ),
                       Text(
-                        product.barcode ?? product.id,
+                        barcodeDisplay,
                         style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,

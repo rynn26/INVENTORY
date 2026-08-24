@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../../core/services/penitip_service.dart';
+import '../../../core/services/product_service.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
@@ -23,6 +25,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _totalGross = 0;
   int _totalCommission = 0;
   int _totalNetPayout = 0;
+  int _activeProductCount = 0;
+  int _activePenitipCount = 0;
 
   @override
   void initState() {
@@ -32,12 +36,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _loadFinancialSummary() async {
     try {
-      final settlements = await TransactionService.fetchSettlements();
+      final results = await Future.wait([
+        TransactionService.fetchOverallFinancialSummary(),
+        ProductService.fetchAll(),
+        PenitipService.fetchAll(),
+      ]);
+
+      final summary = results[0] as Map<String, int>;
+      final products = results[1] as List;
+      final penitips = results[2] as List;
+
       if (!mounted) return;
       setState(() {
-        _totalGross = settlements.fold(0, (sum, s) => sum + s.grossRevenue);
-        _totalCommission = settlements.fold(0, (sum, s) => sum + s.commission);
-        _totalNetPayout = settlements.fold(0, (sum, s) => sum + s.netPayout);
+        _totalGross = summary['gross'] ?? 0;
+        _totalCommission = summary['commission'] ?? 0;
+        _totalNetPayout = summary['netPayout'] ?? 0;
+        _activeProductCount = products.length;
+        _activePenitipCount = penitips.length;
         _isLoadingSummary = false;
       });
     } catch (_) {
@@ -168,7 +183,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Keuntungan Toko (10%)',
+                              'Komisi Toko',
                               style: TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 11.5,
@@ -299,14 +314,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       context: context,
                       icon: Icons.grid_view_rounded,
                       title: 'Master Produk',
-                      subtitle: '6 makanan aktif',
+                      subtitle: _isLoadingSummary
+                          ? 'Memuat...'
+                          : '$_activeProductCount produk aktif',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ProductListScreen(),
                           ),
-                        );
+                        ).then((_) => _loadFinancialSummary());
                       },
                     ),
                   ),
@@ -324,7 +341,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             builder: (context) =>
                                 const StockInventoryScreen(isModalMode: true),
                           ),
-                        );
+                        ).then((_) => _loadFinancialSummary());
                       },
                     ),
                   ),
@@ -339,7 +356,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       context: context,
                       icon: Icons.handshake_outlined,
                       title: 'Mitra Penitip',
-                      subtitle: '3 mitra terdaftar',
+                      subtitle: _isLoadingSummary
+                          ? 'Memuat...'
+                          : '$_activePenitipCount mitra terdaftar',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -347,7 +366,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             builder: (context) =>
                                 const PenitipListScreen(isModalMode: true),
                           ),
-                        );
+                        ).then((_) => _loadFinancialSummary());
                       },
                     ),
                   ),

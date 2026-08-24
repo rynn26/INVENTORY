@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_categories.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../../core/services/bluetooth_printer_service.dart';
 import '../../../core/services/penitip_service.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../models/cart_item.dart';
 import '../../../models/product_item.dart';
+import '../../../shared/widgets/bluetooth_printer_modal.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/custom_search_bar.dart';
 import '../../penitip/widgets/add_penitip_modal.dart';
@@ -269,6 +271,45 @@ class _PosScannerScreenState extends State<PosScannerScreen> {
       appBar: CustomAppBar(
         title: 'Kasir Jualan',
         actions: [
+          // Bluetooth Printer Button
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: InkWell(
+                onTap: () async {
+                  await BluetoothPrinterModal.show(context);
+                  setState(() {});
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: BluetoothPrinterService.isConnected
+                        ? AppColors.success.withValues(alpha: 0.12)
+                        : AppColors.surfaceMuted,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: BluetoothPrinterService.isConnected
+                          ? AppColors.success
+                          : AppColors.border,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Icon(
+                    BluetoothPrinterService.isConnected
+                        ? Icons.print_rounded
+                        : Icons.print_disabled_rounded,
+                    color: BluetoothPrinterService.isConnected
+                        ? AppColors.success
+                        : AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // Shopee Style Header Cart Badge Button
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -453,7 +494,7 @@ class _PosScannerScreenState extends State<PosScannerScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: displayedProducts.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (context, index) =>
                               const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final prod = displayedProducts[index];
@@ -469,7 +510,8 @@ class _PosScannerScreenState extends State<PosScannerScreen> {
                                       width: 56,
                                       height: 56,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Container(
                                         width: 56,
                                         height: 56,
                                         color: AppColors.primaryLight,

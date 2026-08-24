@@ -25,8 +25,14 @@ class PenitipDetailModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final commission = (penitip.totalRevenue * (penitip.commissionRate / 100)).round();
+    // Gunakan commission_nominal (Rp/item) jika tersedia, fallback ke commissionRate %
+    final commission = penitip.commissionNominal > 0
+        ? penitip.commissionNominal * penitip.totalItems
+        : (penitip.totalRevenue * (penitip.commissionRate / 100)).round();
     final netPayout = penitip.totalRevenue - commission;
+    final commissionLabel = penitip.commissionNominal > 0
+        ? 'Komisi Toko (Rp ${penitip.commissionNominal}/item)'
+        : 'Komisi Toko (${penitip.commissionRate}%)';
 
     return Container(
       decoration: const BoxDecoration(
@@ -153,7 +159,7 @@ class PenitipDetailModal extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Komisi Toko (${penitip.commissionRate}%)',
+                        commissionLabel,
                         style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                       ),
                       Text(

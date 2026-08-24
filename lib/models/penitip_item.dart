@@ -6,6 +6,7 @@ class PenitipItem {
   final int totalRevenue;
   final String? phoneNumber;
   final int commissionRate;
+  final int commissionNominal; // nominal Rp per item terjual (0 = tidak diset)
   final String? address;
   final String? notes;
 
@@ -17,6 +18,7 @@ class PenitipItem {
     required this.totalRevenue,
     this.phoneNumber,
     this.commissionRate = 10,
+    this.commissionNominal = 0,
     this.address,
     this.notes,
   });
@@ -32,6 +34,7 @@ class PenitipItem {
       totalRevenue: (json['total_revenue'] as int?) ?? 0,
       phoneNumber: json['phone_number'] as String?,
       commissionRate: (json['commission_rate'] as int?) ?? 10,
+      commissionNominal: (json['commission_nominal'] as int?) ?? 0,
       address: json['address'] as String?,
       notes: json['notes'] as String?,
     );
@@ -43,6 +46,7 @@ class PenitipItem {
       'name': name,
       'phone_number': phoneNumber,
       'commission_rate': commissionRate,
+      'commission_nominal': commissionNominal,
       'address': address,
       'notes': notes,
     };
@@ -56,6 +60,7 @@ class PenitipItem {
     int? totalRevenue,
     String? phoneNumber,
     int? commissionRate,
+    int? commissionNominal,
     String? address,
     String? notes,
   }) {
@@ -67,6 +72,7 @@ class PenitipItem {
       totalRevenue: totalRevenue ?? this.totalRevenue,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       commissionRate: commissionRate ?? this.commissionRate,
+      commissionNominal: commissionNominal ?? this.commissionNominal,
       address: address ?? this.address,
       notes: notes ?? this.notes,
     );
