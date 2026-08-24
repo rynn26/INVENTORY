@@ -10,19 +10,26 @@ workflows:
     scripts:
       - name: Get Flutter packages
         script: flutter packages pub get
+
       - name: Install CocoaPods
         script: |
           cd ios
           pod install
           cd ..
-      - name: Build Flutter iOS Release IPA
+
+      - name: Build Flutter iOS Release (No Codesign)
         script: |
-          flutter build ipa --release --no-codesign
-          cd build/ios/archive/Runner.xcarchive/Products/Applications
-          mkdir -p Payload
-          cp -r Runner.app Payload/
+          flutter build ios --release --no-codesign
+
+      - name: Package IPA for Sideloadly
+        script: |
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          IPA_DIR="$CM_BUILD_DIR/build/output"
+          mkdir -p "$IPA_DIR/Payload"
+          cp -r "$APP_PATH" "$IPA_DIR/Payload/"
+          cd "$IPA_DIR"
           zip -qr Runner.ipa Payload
-          mkdir -p $CM_BUILD_DIR/build/output
-          mv Runner.ipa $CM_BUILD_DIR/build/output/
+          rm -rf Payload
+
     artifacts:
       - build/output/Runner.ipa
